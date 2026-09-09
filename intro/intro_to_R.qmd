@@ -1,0 +1,631 @@
+---
+title: "Getting started with R"
+subtitle: "FA515: Pharmaceutical Physical Chemistry"
+author: "Sebastian Jakobsen"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-overflow: wrap
+    embed-resources: true
+---
+```{r}
+#| echo: false
+#| message: false
+#| warning: false
+library(tidyverse)
+```
+
+## Why R (and this guide)
+
+In this course, R is used to work with data: plotting it,
+fitting models to it, and pulling numbers like rate constants or activation
+energies out of those models. This guide introduces the R skills that
+support that work, starting from installing R itself. It is written as a
+reference. You can read it start to finish before your first session with
+data, or come back to a specific section whenever something in a task looks
+unfamiliar.
+
+If you would rather see the R basics walked through on video first, this
+one is a good starting point:
+[Introduction to R (YouTube)](https://www.youtube.com/watch?v=FY8BISK5DpM&t=315s).
+
+## Installing R and RStudio
+
+You need two separate programs.
+
+- **R** is the actual programming language and the engine that runs your
+  code.
+- **RStudio** is a separate program, an interface (an "IDE") that makes
+  working with R considerably easier: it gives you a script editor, a
+  console, a plot viewer, and a file browser in a single window.
+
+Install them in this order:
+
+1. Install R first: <https://cran.r-project.org/> (choose the version for
+   your operating system).
+2. Install RStudio Desktop second: <https://posit.co/download/rstudio-desktop/>.
+
+RStudio needs R to already be installed, since RStudio itself does not
+contain the R language, it just provides a nicer way to use it. Once both
+are installed, you only ever need to open RStudio; it starts R for you in
+the background.
+
+## Finding your way around RStudio
+
+When you open RStudio, you will typically see four panes:
+
+- **Script** (usually top-left): where you write and save code, in files
+  ending in `.R` or `.qmd`. This is where most of your work happens.
+- **Console** (usually bottom-left): where code is actually executed, one
+  command at a time. You can type directly into the console, but anything
+  typed there is not saved anywhere.
+- **Environment** (usually top-right): a list of the objects (data, results,
+  models) that currently exist in your R session.
+- **Plots / Files / Help** (usually bottom-right): plots appear here, along
+  with a file browser and the help viewer.
+
+When RStudio first opens, there is usually no script pane visible at all,
+only the console. This is because a script is a file, and no file has been
+created or opened yet. To create one:
+
+`File → New File → R Script` (or the keyboard shortcut `Ctrl+Shift+N`,
+`Cmd+Shift+N` on Mac) opens a new, empty `.R` file in the script pane. This
+is a plain text file that will hold your code.
+
+`File → New File → Quarto Document` creates a `.qmd` file instead. A Quarto
+document mixes written text with chunks of R code, and can be "rendered"
+into a formatted document (for example, HTML) showing both the code and its
+output together (for instance, this guide is created using a Quarto document). A plain `.R` script only ever contains code, with comments
+(lines starting with `#`) as the only text allowed alongside it.
+
+Either file type needs to be saved before it is useful: `Ctrl+S`
+(`Cmd+S` on Mac), then choose a location and a filename ending in `.R` or
+`.qmd`. If you are working inside an RStudio Project (see the next
+section), save it somewhere inside that project's folder, so it stays organised alongside the data it uses.
+
+To run a line of code from a script, place your cursor on that line and
+press `Ctrl+Enter` (`Cmd+Enter` on Mac). It is good practice to always write
+code in a script and run it from there, rather than typing directly into the
+console: a script is a saved, repeatable record of exactly what you did,
+while anything typed only into the console is lost once you close R.
+
+## Files, folders, and the working directory
+
+R always has a working directory: a specific folder on your computer that
+it treats as "home" for the current session. When you write
+`read_csv("data.csv")`, R looks for `data.csv` inside the working directory,
+not just anywhere on your computer. This is one of the most common sources
+of confusion for people new to R, so it is worth understanding early.
+
+You can check your current working directory at any time:
+
+```{r}
+#| eval: false
+getwd()
+```
+
+It is possible to change the working directory manually with `setwd()`, but
+this is not recommended: a path that works on your computer (for example,
+`C:/Users/yourname/Documents/...`) will not work on someone else's, or even
+on your own computer after moving files around.
+
+The recommended approach instead is to work inside an RStudio Project. In
+RStudio, choose `File → New Project`, and pick a folder for your course
+work. Every file inside that project folder can then be referred to with a
+short, relative path (for example, `"data/kinetics_data.csv"`), rather than
+a full path starting from your hard drive. When you open the project (by
+double-clicking its `.Rproj` file), RStudio automatically sets the working
+directory to that project folder, so paths written by anyone, on any
+computer, keep working.
+
+A simple, sensible folder structure inside a project might look like:
+
+```
+my_project/
+├── my_project.Rproj
+├── analysis.R
+└── data/
+    └── kinetics_data.csv
+```
+
+with a script then reading the data as `read_csv("data/kinetics_data.csv")`.
+
+## R as a calculator
+
+Before doing anything else, it helps to see that R is, at its simplest,
+just a calculator:
+
+```{r}
+2 + 2
+10 / 4
+2^3        # exponent (2 to the power of 3)
+(5 + 3) * 2
+```
+
+The standard order of operations applies: parentheses first, then
+exponents (`^`), then multiplication and division (`*`, `/`), then addition
+and subtraction (`+`, `-`). If you are ever unsure how an expression will be
+evaluated, adding parentheses never hurts and often makes the intention
+clearer to read later.
+
+## Objects and assignment
+
+Rather than just calculating a value and discarding it, you usually want to
+store it, so it can be reused. This is done with the assignment arrow
+`<-`:
+
+```{r}
+x <- 5
+y <- 2
+x * y
+```
+
+Notice that assigning a value does not print anything. The value `5` is now
+stored under the name `x`, and R stays quiet about it. To see the value
+again, type the object's name on its own line:
+
+```{r}
+x
+```
+
+A few rules and conventions for naming objects: names cannot start with a
+number, cannot contain spaces, and are case-sensitive (`x` and `X` are
+different objects). Use an underscore in place of a space, for example
+`rate_constant` rather than `rate constant`. Once created, an object stays
+available for the rest of your session (and appears in the Environment
+pane) until you overwrite it or restart R.
+
+## Vectors
+
+A vector is simply a sequence of values of the same type, stored together
+as one object. Vectors are built with `c()` ("combine"):
+
+```{r}
+temps_C <- c(20, 25, 30, 35)
+temps_C
+```
+
+Two properties of vectors are worth knowing from the start. First,
+operations apply to every element at once, without needing to repeat the
+calculation manually for each value:
+
+```{r}
+temps_C + 273.15
+```
+
+Second, individual elements can be pulled out using square brackets and a
+position (starting at 1, not 0):
+
+```{r}
+temps_C[1]     # first element
+temps_C[2:3]   # second and third elements
+```
+
+## Comparisons and booleans
+
+A boolean is a value that is either `TRUE` or `FALSE`. In R, comparisons
+between numbers (or other values) produce booleans:
+
+```{r}
+5 > 3
+5 == 5     # note: == tests equality, a single = does not
+5 != 3     # "not equal to"
+```
+
+The comparison operators are `==`, `!=`, `<`, `>`, `<=`, `>=`. Applied to a
+vector, a comparison is evaluated element by element, producing a vector of
+`TRUE`/`FALSE` values:
+
+```{r}
+temps_C > 25
+```
+
+Multiple conditions can be combined with `&` ("and", both must be true) and
+`|` ("or", at least one must be true):
+
+```{r}
+temps_C > 20 & temps_C < 35
+```
+
+This matters beyond simple arithmetic checks: as shown below, this is
+exactly the logic used inside `filter()` to decide which rows of a data set
+to keep.
+
+## Functions
+
+A function takes some input (its arguments) and returns an output. Most of
+what you do in R, beyond basic arithmetic, involves calling functions:
+
+```{r}
+sqrt(16)
+mean(temps_C)
+round(3.14159, 2)
+```
+
+Arguments can be given positionally, in the order the function expects them
+(`round(3.14159, 2)`), or by name (`round(x = 3.14159, digits = 2)`). Both
+produce the same result; using names becomes especially useful once a
+function takes several arguments, since it makes clear which value is going
+where without needing to remember the exact order.
+
+If you are unsure what a function does, or what arguments it accepts, ask R
+directly:
+
+```{r}
+#| eval: false
+?round
+```
+
+This opens the function's help page, which lists every argument and usually
+includes a short example. It can also help to search online for the
+function name (for example, "round function R"), or to ask an AI assistant.
+
+## Packages
+
+Base R (what you get immediately after installing it) already includes a
+great many functions, but a lot of commonly used functionality, reading CSV
+files, reshaping data, and plotting among them, is not built in by default.
+Instead, it lives in add-on packages: bundles of functions that someone
+else has written and made available to install.
+
+`tidyverse` is one such package (in fact, a collection of several packages
+that work well together, including `dplyr` and `ggplot2`, which are used
+throughout this guide). It needs to be installed once per computer, and
+then loaded once at the start of every R session:
+
+```{r}
+#| eval: false
+install.packages("tidyverse")   # only needed once, ever, per computer
+library(tidyverse)               # needed at the start of every session
+```
+
+If you see an error such as `could not find function`, the most likely
+cause is a missing `library()` call for the package that function belongs
+to.
+
+## Data frames and reading in data
+
+A data frame, or tibble (the tidyverse's version of a data frame), is a
+table: each row is an observation, and each column is a variable. In
+practice, you will most often get one by reading in a CSV file:
+
+```{r}
+#| eval: false
+my_data <- read_csv("data/some_file.csv")
+```
+
+Following on from the working directory discussion above, this only works
+if the path given matches where the file actually is, relative to your
+project folder.
+
+A tibble can also be built directly, without reading a file, which is
+useful for small examples:
+
+```{r}
+df <- tibble(x = c(1, 2, 3), y = c(4, 5.2, 5.9))
+df
+```
+
+Before working further with any data frame, it is good practice to look at
+it first. A useful function for this:
+
+```{r}
+glimpse(df)   # column names, data types, and the first few values
+```
+
+A single column can be pulled out with `$`:
+
+```{r}
+df$x
+```
+
+## Core dplyr verbs
+
+`dplyr` is the tidyverse package for working with data frames: filtering
+rows, creating columns, sorting, and similar everyday tasks. Its functions
+are often called "verbs", since each one describes a single action to
+perform on the data, such as "mutate", "filter", or "arrange". A small set
+of these verbs covers most everyday data wrangling, and each is introduced
+separately below with a simple, standalone example.
+
+### `mutate()`: add or change a column
+
+`mutate()` adds a new column to a data frame, calculated from existing
+columns:
+
+```{r}
+mutate(df, z = x + y)
+```
+
+This does not change `df` itself, it returns a new data frame with the
+added column, which is only kept if assigned back:
+
+```{r}
+df <- mutate(df, z = x + y)
+```
+
+Multiple columns can be created in one call, separated by commas, and a
+later column can immediately use one defined earlier in the same call:
+
+```{r}
+mutate(df, z = x + y, w = z * 2)
+```
+
+### `filter()`: keep only some rows
+
+`filter()` keeps every row where a condition (built using the comparison
+operators from the section above) evaluates to `TRUE`:
+
+```{r}
+filter(df, x > 1)
+```
+
+### `arrange()`: sort rows
+
+`arrange()` reorders the rows of a data frame based on the values in one or
+more columns, without changing the data itself:
+
+```{r}
+arrange(df, y)
+```
+
+By default this sorts in ascending order (smallest first). Wrap the column
+in `desc()` to sort descending (largest first):
+
+```{r}
+arrange(df, desc(y))
+```
+
+### `slice()`: pick rows by position
+
+`slice()` picks out rows by their position (row number), rather than by
+sorting or by a condition. This is often used right after `arrange()`, to
+pull out a specific rank, for example the row with the highest R² after
+sorting by it:
+
+```{r}
+slice(df, 1)      # first row only
+slice(df, 1:2)    # first two rows
+```
+
+## Chaining steps: nested code vs. the pipe `%>%`
+
+A single verb is rarely the whole task. More often, several steps need to
+happen one after another, for example: add a column, sort by it, then keep
+only the top row. Written directly, this means nesting one function call
+inside another:
+
+```{r}
+slice(arrange(mutate(df, z = x + y), desc(z)), 1)
+```
+
+This produces the correct result, but is hard to read: the first step that
+actually happens (`mutate`) is the innermost call, so the code has to be
+read from the inside out, in the opposite order to how it is executed.
+
+The pipe operator, `%>%`, solves this by taking whatever is on its left and
+passing it in as the first argument to the function on its right. The same
+calculation, written with the pipe:
+
+```{r}
+df %>%
+  mutate(z = x + y) %>%
+  arrange(desc(z)) %>%
+  slice(1)
+```
+
+Both versions produce an identical result. The piped version reads
+top-to-bottom, in the same order the steps are actually carried out, which
+is generally much easier to follow, especially as the number of steps
+grows.
+
+## Two math functions: `log()` and `exp()`
+
+Two functions worth knowing specifically, beyond basic arithmetic, are the
+natural logarithm and its inverse:
+
+```{r}
+log(10)    # natural log (ln), not log base 10
+exp(1)     # e to the power of 1
+```
+
+These come up whenever a relationship needs to be transformed into a
+straight line before it can be fitted with linear regression, for example,
+an exponential decay becomes linear once you take the log of the
+concentration. One thing worth watching for: `log()` of zero or a negative
+number returns `-Inf` or `NaN` (both meaning "not a valid number"), without
+raising an error. If a result further down a calculation looks wrong, this
+is a common place to check first.
+
+## Fitting a straight line: `lm()`
+
+Linear regression finds the straight line that best fits a set of points:
+specifically, the line that minimises the total (squared) distance between
+the line and each data point. You do not need to derive this by hand; the
+`lm()` function ("linear model") does it directly:
+
+```{r}
+model <- lm(y ~ x, data = df)
+```
+
+The formula `y ~ x` reads as "model y as a function of x", and mirrors how
+you would write it mathematically. Note that `y` and `x` here are not
+literal letters to copy: they must be replaced with the actual column names
+from your data. For example, fitting concentration against time would be
+written `lm(concentration ~ time, data = kinetics_data)`, using whatever the
+columns are actually called in that data frame.
+
+The fitted result is stored in an object, here called `model`, though it
+could just as easily be named something else. This object contains, among
+other things, the equation of the best-fit line and information about how
+well it fits the data. Two pieces are used most often:
+
+```{r}
+coef(model)
+```
+
+This returns the intercept and slope of the fitted line, in that order.
+`coef(model)[[1]]` is the intercept, `coef(model)[[2]]` is the slope; the
+double square brackets pull out a single value from the result.
+
+Beyond the coefficients, calling `summary()` on the model gives a fuller
+report of the fit, including how well the line actually matches the data.
+One especially useful value from that report is R²:
+
+```{r}
+summary(model)$r.squared
+```
+
+R² (r-squared) is a number between 0 and 1 describing how well the line
+fits the data: closer to 1 means the points fall close to the line, closer
+to 0 means they are scattered further from it. Note that R² is not stored
+directly on `model`; it is one part of the larger result returned by
+`summary()`, which is why it has to be accessed this way rather than with
+`model$r.squared`.
+
+## Plotting with ggplot2
+
+Every plot built with `ggplot2` follows the same basic pattern: give it a
+data frame, map columns to visual properties like x and y position with
+`aes()`, and then add one or more layers with `+`:
+
+```{r}
+ggplot(df, aes(x = x, y = y)) +
+  geom_point() +
+  labs(x = "x value", y = "y value")
+```
+
+A fitted regression line can be added directly, without first needing to
+run `lm()` separately:
+
+```{r}
+ggplot(df, aes(x = x, y = y)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE)
+```
+
+### Styling a plot
+
+A few arguments come up repeatedly when adjusting how a plot looks. None of
+them change the underlying data or any calculated result; they only affect
+appearance.
+
+- `labs()` sets axis and plot titles, for example `labs(x = "Time (days)",
+  y = "Concentration (mg/mL)", title = "Degradation over time")`.
+- `size` (inside a `geom_`, for example `geom_point(size = 2)`) controls how
+  large points or lines are drawn.
+- `alpha` (also inside a `geom_`, for example `geom_point(alpha = 0.3)`)
+  controls transparency, from 0 (fully invisible) to 1 (fully solid). This
+  is particularly useful with a large number of overlapping points, where a
+  lower alpha makes the density of the data visible instead of a single
+  solid mass of ink.
+- Colour can be used in two different ways, which are easy to confuse.
+  Placing it inside `aes()`, as in `aes(color = group)`, maps a column in
+  the data to colour, so that different groups get different colours
+  automatically, along with a legend. Placing it outside `aes()`, as in
+  `geom_point(color = "blue")`, simply sets every point to that one fixed
+  colour, with no legend and no connection to the data.
+- Themes, such as `theme_minimal()`, `theme_classic()`, or `theme_bw()`,
+  control the overall look of the plot: background, gridlines, and fonts.
+  They can be combined with a `base_size` argument, for example
+  `theme_minimal(base_size = 14)`, to increase or decrease all text sizes on
+  the plot at once.
+
+Bringing these together, a plot with two groups, styled axis titles, larger
+semi-transparent points, and an adjusted theme might look like this:
+
+```{r}
+df_demo <- tibble(
+  x     = c(1, 2, 4, 1, 2, 4),
+  y     = c(7, 4, 2, 6, 5, 4),
+  group = c("A", "A", "A", "B", "B", "B")
+)
+
+ggplot(df_demo, aes(x = x, y = y, color = group)) +
+  geom_point(size = 3, alpha = 0.5) +
+  labs(x = "Time (days)", y = "Concentration (mg/mL)",
+       title = "Example styled plot") +
+  theme_minimal(base_size = 14)
+```
+
+## Printing results
+
+`cat()` combines text and numbers into a single readable line of output.
+`signif()` rounds a number to a chosen number of significant figures,
+useful for reporting a result without printing more decimal places than are
+meaningful:
+
+```{r}
+result <- 3.14159265
+cat("Result =", signif(result, 3))
+```
+
+## Common errors and how to handle them
+
+Error messages in R can look intimidating at first, but most of the ones
+you will encounter early on fall into a small number of categories.
+
+**could not find function "..."**:
+A package has not been loaded. Check that `library(tidyverse)` (or whichever
+package the function belongs to) has been run earlier in the session. This
+can also be caused by a typo in the function name, so check the spelling
+too.
+
+**object '...' not found**:
+Either there is a typo in the object's name, or the line that creates it
+has not actually been run yet in this session. R only knows about objects
+that have already been executed, in order, from the top of the script or
+directly in the console; simply having a line written in your script is not
+enough.
+
+**cannot open file '...': No such file or directory**:
+This is almost always a working directory or path problem, see the section
+above. Check `getwd()`, and check that the file path matches where the file
+actually is, relative to that folder.
+
+**non-numeric argument to binary operator**:
+This usually means a mathematical operation (`+`, `-`, `*`, `/`) is being
+applied to a column or value that is text (a character) rather than a
+number. Check the data type of the relevant column, for example with
+`glimpse()`.
+
+**A result is unexpectedly `NA`, `NaN`, or `-Inf`**:
+`NA` usually means missing data. `NaN` or `-Inf` often comes from an
+invalid calculation, such as `log()` of zero or a negative number, or
+dividing by zero. Trace back to where the value was calculated and check
+the input.
+
+**unexpected symbol, unexpected ')', unexpected '}', and similar**:
+This is a syntax error: usually a missing comma, a missing or extra
+bracket, or a missing `+` between `ggplot2` layers. R will point to roughly
+where it got confused, though the actual mistake is sometimes on the line
+just before.
+
+When an error appears, it is usually worth reading it from the bottom up,
+and checking the Environment pane to confirm which objects actually exist
+and what they currently contain, rather than assuming a line ran
+successfully just because it was written.
+
+More generally, when none of the categories above obviously match, the
+following approach tends to narrow things down:
+
+1. **Read the error message itself**, even if it looks cryptic. It usually
+   names the function that failed and gives some indication of what it did
+   not like about its input.
+2. **Find the line the error refers to**, and run it on its own, rather
+   than as part of a larger block. This makes it clear exactly which step
+   is failing, rather than guessing among several lines run together.
+3. **Check the objects involved** in that line, by typing their name on
+   their own, or using `glimpse()`, to see whether they contain what you
+   expect. A surprising value earlier in a script is often the real cause
+   of an error that only appears several lines later.
+4. **Re-run the script from the top**, if anything is uncertain. Since R
+   only knows about code that has actually been executed, working through
+   a script out of order, or after editing an earlier line, is a common
+   source of errors that are not really about the current line at all.
+5. **If still stuck**, search for the exact error message online, or ask an AI
+   assistant, pasting the relevant code and the full error message rather
+   than just describing the problem from memory.

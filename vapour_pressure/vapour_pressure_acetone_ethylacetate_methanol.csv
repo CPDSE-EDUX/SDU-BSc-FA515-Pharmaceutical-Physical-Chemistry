@@ -1,0 +1,235 @@
+liquid,T_C,p_mbar
+acetone,17.6,250
+acetone,17.9,252
+acetone,18.0,253
+acetone,18.1,252
+acetone,18.1,257
+acetone,18.1,258
+acetone,19.6,272
+acetone,19.7,270
+acetone,19.7,268
+acetone,19.8,274
+acetone,19.8,281
+acetone,19.9,271
+acetone,21.9,296
+acetone,21.9,296
+acetone,22.0,306
+acetone,22.2,299
+acetone,22.3,304
+acetone,22.3,306
+acetone,23.7,321
+acetone,23.8,324
+acetone,23.9,322
+acetone,24.0,321
+acetone,24.0,320
+acetone,24.2,320
+acetone,25.9,348
+acetone,25.9,355
+acetone,25.9,346
+acetone,26.0,338
+acetone,26.1,358
+acetone,26.2,346
+acetone,27.7,377
+acetone,27.7,376
+acetone,27.8,372
+acetone,27.9,381
+acetone,28.1,380
+acetone,28.2,383
+acetone,29.6,410
+acetone,29.9,417
+acetone,30.0,399
+acetone,30.0,414
+acetone,30.1,400
+acetone,30.4,415
+acetone,31.5,427
+acetone,31.8,434
+acetone,31.8,435
+acetone,31.9,441
+acetone,31.9,436
+acetone,32.0,450
+acetone,34.0,456
+acetone,34.1,487
+acetone,34.1,480
+acetone,34.1,484
+acetone,34.1,481
+acetone,34.2,473
+acetone,35.6,493
+acetone,35.7,507
+acetone,35.7,506
+acetone,36.0,505
+acetone,36.0,512
+acetone,36.0,515
+acetone,37.2,525
+acetone,37.6,540
+acetone,37.7,561
+acetone,37.8,546
+acetone,37.9,550
+acetone,38.3,550
+acetone,39.4,557
+acetone,39.6,578
+acetone,40.0,596
+acetone,40.1,598
+acetone,40.4,609
+acetone,40.4,598
+acetone,41.7,639
+acetone,41.9,627
+acetone,42.1,626
+acetone,42.1,626
+acetone,42.1,638
+acetone,42.3,652
+ethyl acetate,17.5,104
+ethyl acetate,17.6,108
+ethyl acetate,17.9,110
+ethyl acetate,18.0,110
+ethyl acetate,18.0,110
+ethyl acetate,18.2,109
+ethyl acetate,19.1,118
+ethyl acetate,19.7,115
+ethyl acetate,19.9,119
+ethyl acetate,19.9,121
+ethyl acetate,20.0,120
+ethyl acetate,20.6,119
+ethyl acetate,21.9,131
+ethyl acetate,22.1,127
+ethyl acetate,22.1,130
+ethyl acetate,22.2,131
+ethyl acetate,22.2,131
+ethyl acetate,22.4,135
+ethyl acetate,23.6,141
+ethyl acetate,23.7,138
+ethyl acetate,23.9,143
+ethyl acetate,24.0,140
+ethyl acetate,24.1,147
+ethyl acetate,24.2,140
+ethyl acetate,25.6,156
+ethyl acetate,25.8,155
+ethyl acetate,25.9,154
+ethyl acetate,26.0,154
+ethyl acetate,26.2,158
+ethyl acetate,26.2,160
+ethyl acetate,27.5,166
+ethyl acetate,27.5,167
+ethyl acetate,27.9,169
+ethyl acetate,28.1,172
+ethyl acetate,28.3,175
+ethyl acetate,28.5,172
+ethyl acetate,29.6,183
+ethyl acetate,29.8,184
+ethyl acetate,29.9,185
+ethyl acetate,30.0,184
+ethyl acetate,30.2,181
+ethyl acetate,30.5,189
+ethyl acetate,31.6,193
+ethyl acetate,31.7,195
+ethyl acetate,31.7,194
+ethyl acetate,31.7,200
+ethyl acetate,31.7,198
+ethyl acetate,32.2,204
+ethyl acetate,33.5,212
+ethyl acetate,34.1,217
+ethyl acetate,34.1,221
+ethyl acetate,34.2,221
+ethyl acetate,34.2,220
+ethyl acetate,34.4,223
+ethyl acetate,35.9,231
+ethyl acetate,35.9,231
+ethyl acetate,36.0,234
+ethyl acetate,36.0,238
+ethyl acetate,36.1,235
+ethyl acetate,36.3,246
+ethyl acetate,37.4,249
+ethyl acetate,37.6,250
+ethyl acetate,38.0,261
+ethyl acetate,38.0,250
+ethyl acetate,38.2,252
+ethyl acetate,38.3,251
+ethyl acetate,39.6,264
+ethyl acetate,39.8,276
+ethyl acetate,40.0,280
+ethyl acetate,40.0,271
+ethyl acetate,40.2,277
+ethyl acetate,40.3,284
+ethyl acetate,41.7,297
+ethyl acetate,41.9,300
+ethyl acetate,41.9,301
+ethyl acetate,42.0,305
+ethyl acetate,42.3,304
+ethyl acetate,42.5,300
+methanol,17.6,127
+methanol,17.8,134
+methanol,18.0,138
+methanol,18.0,135
+methanol,18.1,134
+methanol,18.1,135
+methanol,19.6,146
+methanol,19.8,148
+methanol,19.9,150
+methanol,20.0,151
+methanol,20.3,150
+methanol,20.6,152
+methanol,21.6,165
+methanol,21.9,166
+methanol,22.1,167
+methanol,22.1,166
+methanol,22.2,168
+methanol,22.4,167
+methanol,23.6,176
+methanol,23.8,177
+methanol,23.9,180
+methanol,24.0,178
+methanol,24.0,177
+methanol,24.0,183
+methanol,25.6,193
+methanol,25.9,200
+methanol,26.1,204
+methanol,26.1,204
+methanol,26.2,207
+methanol,26.3,204
+methanol,27.7,216
+methanol,27.7,219
+methanol,27.8,222
+methanol,28.0,226
+methanol,28.0,219
+methanol,28.3,224
+methanol,29.7,238
+methanol,29.8,237
+methanol,29.9,237
+methanol,30.2,249
+methanol,30.3,240
+methanol,30.3,239
+methanol,31.7,260
+methanol,32.0,260
+methanol,32.1,261
+methanol,32.1,267
+methanol,32.3,266
+methanol,32.4,266
+methanol,33.6,293
+methanol,33.7,288
+methanol,33.8,290
+methanol,33.9,289
+methanol,34.0,290
+methanol,34.1,289
+methanol,35.8,317
+methanol,35.9,316
+methanol,36.1,318
+methanol,36.1,322
+methanol,36.3,321
+methanol,36.4,313
+methanol,37.8,341
+methanol,37.9,344
+methanol,37.9,336
+methanol,38.0,346
+methanol,38.1,345
+methanol,38.5,361
+methanol,39.6,370
+methanol,39.9,368
+methanol,40.1,376
+methanol,40.1,371
+methanol,40.1,377
+methanol,40.3,374
+methanol,41.7,404
+methanol,41.7,403
+methanol,41.8,407
+methanol,41.9,395
+methanol,42.0,411
+methanol,42.4,424

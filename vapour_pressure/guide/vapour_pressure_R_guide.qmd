@@ -1,0 +1,449 @@
+---
+title: "Vapour pressure analysis in R"
+subtitle: "FA515: Pharmaceutical Physical Chemistry"
+author: "Sebastian Jakobsen"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-overflow: wrap
+    embed-resources: true
+---
+
+## What this guide is for
+
+This guide shows how to go from measured vapour pressure vs. temperature
+data to the thermodynamic quantities that describe a liquid's
+liquid-vapour equilibrium: the enthalpy and entropy of vaporisation
+($\Delta_{vap}H$, $\Delta_{vap}S$), and both the standard and normal boiling point. It
+works the same way whether your data is something you measured yourself
+at the bench and recorded in Excel, or a larger dataset you were given as
+a `.csv` file.
+
+The overall approach - turn a non-linear physical relationship into
+something you can fit a straight line to, then read the physical
+quantities off the slope and intercept - is the same one used earlier in
+the course for temperature-dependent rate constants. Where a step is
+essentially identical to that earlier case, this guide says so rather
+than re-explaining it from scratch, so work through that material first
+if anything here feels unfamiliar.
+
+Some code below is complete; some has blanks marked `___` for you to
+fill in with your own column names, values, or file paths. Basic R
+mechanics (assignment, `mutate()`, `filter()`, `lm()`, plotting) are
+covered in the introductory R guide and are not re-explained here either.
+
+## Setting up
+
+```{r}
+#| message: false
+library(tidyverse)
+library(readxl)   # new here - reads Excel files, the same idea as read_csv()
+```
+
+## Importing your data
+
+### From your own measurements, recorded in Excel
+
+If you recorded your own readings by hand during a practical, they are
+probably sitting in an Excel file rather than a `.csv`. `readxl`'s
+`read_excel()` reads a `.xlsx` file straight into a tibble, the same way
+`read_csv()` reads a `.csv` - both hand you back a tidy data frame,
+`read_excel()` just points at a different file type.
+
+```{r}
+#| eval: false
+vapour_data <- read_excel("_______")   # fill in your file's path/name
+```
+
+#### Structuring your spreadsheet so it imports cleanly
+
+`read_excel()` works best when the sheet underneath is already tidy - one
+variable per column, one measurement per row - rather than laid out the
+way you might present it in a report. A few habits make the difference:
+
+- Start the table in the top-left corner: the first header in cell `A1`,
+  the data filling out from there. `read_excel()` begins reading at the
+  first non-empty cell.
+- Give every column a single, plain header in the first row.
+- Put the unit in the header, not in the cells. A column headed `T_C`
+  holding bare numbers (`17.5`) imports as a number you can compute with;
+  the same readings typed as `"17.5 C"` import as text and have to be
+  cleaned up first. 
+- Keep one variable per column: a `T_C` column and a separate
+  `p_mano_mbar` column, not both crammed together.
+- If you measured more than one substance, give it its own column (e.g.
+  `liquid`) rather than using a separate sheet, or the sheet's name, to
+  say which substance a block of rows belongs to.
+
+A tidy version of the same data might look like this, with `liquid` sitting
+in cell `A1`:
+
+| liquid   | T_C  | p_mano_mbar |
+|----------|------|-------------|
+| Liquid A | 17.5 | -490        |
+| Liquid A | 15.0 | -545        |
+| Liquid B | 17.5 | -564        |
+| Liquid B | 15.0 | -612        |
+
+Laid out this way, every column is exactly one variable, every row is exactly one
+measurement, and `read_excel()` (or `read_csv()`) can hand it back to you
+with no cleanup needed.
+
+### From a larger provided csv dataset
+
+If instead you've been given a ready-made dataset as a `.csv` file  import it the way you already know:
+
+```{r}
+#| eval: false
+vapour_data <- read_csv("_______")   # fill in your file's path/name
+```
+
+The same tidy layout applies either way: whatever the file type, you
+want one row per measurement and one column per variable before moving
+on.
+
+## (If applicable) Correcting raw instrument readings
+
+The manometer reading is not the vapour pressure yet: it is measured
+against the zero point ("nulpunktet"), the reading taken with the
+container evacuated before any liquid is added. Subtract that zero point
+to get the real pressure. Define it once near the top of your script,
+with a comment giving its meaning and unit, then correct the column in
+its own `mutate()` step before anything else:
+
+```{r}
+#| eval: false
+p_zero_mbar <- ___   # manometer zero point, mbar - substitute your own value
+
+vapour_data <- vapour_data %>%
+  mutate(p_real_mbar = p_mano_mbar - p_zero_mbar)  
+```
+
+If your pressure column is already the true vapour pressure, skip this
+step and work directly with the column you were given.
+
+## The Clausius-Clapeyron relationship
+
+The Clausius-Clapeyron equation relates a liquid's vapour pressure to its
+temperature and its enthalpy of vaporisation. Integrated between a
+reference state and the state you measure, it can be written as
+
+$$
+\ln \left( \frac{p}{p_0} \right) = -\frac{\Delta_{vap}H}{R} \cdot \frac{1}{T} + \frac{\Delta_{vap}S}{R}
+$$
+
+- $p$: the vapour pressure at temperature $T$
+- $p_0$: the standard pressure, $1\ \text{bar} = 1000\ \text{mbar}$
+- $\Delta_{vap}H$: the enthalpy of vaporisation
+- $\Delta_{vap}S$: the entropy of vaporisation
+- $R$: the gas constant, $8.314\ \text{J mol}^{-1}\text{K}^{-1}$
+- $T$: the absolute temperature, in Kelvin
+
+If this looks like the linearised Arrhenius equation from earlier in the
+course, that's because the underlying move is identical: a quantity that
+depends exponentially on `1/T` becomes, after taking its natural log, a straight
+line in `1/T` whose slope and intercept are used to determine the physical constants you
+want. 
+
+### Setting up the linearisation
+
+Same as the Arrhenius linearisation: add the line's two axes as columns -
+`inv_T` (`1 / T_K`, with `T_K` in Kelvin) for x, and `ln_p`
+(`log(p / p0)`) for y.
+
+```{r}
+#| eval: false
+p0_mbar <- 1000   # standard pressure, 1 bar, in the same unit as your p column
+
+vapour_data <- vapour_data %>%
+  mutate(
+    T_K   = ___,    # your temperature column, converted to Kelvin
+    inv_T = ___,    # 1 / T_K
+    ln_p  = ___     # natural log of (your pressure column / p0_mbar)
+  )
+```
+
+## Fitting a line per substance
+
+With more than one liquid in the same data frame, fit each one
+separately - the same pattern already covered for handling several
+conditions in the same dataset earlier in the course: check the exact
+category values, then `filter()` to one substance and pass that straight
+into `lm()`.
+
+```{r}
+#| eval: false
+unique(vapour_data$liquid)   # check the exact spelling of each substance
+```
+
+```{r}
+#| eval: false
+lm_A <- lm(___ ~ ___, data = filter(___))
+# add one more lm() line per substance, following the same pattern
+```
+Make sure to name each `lm()` object something that makes sense for the substance it fits.
+
+Visualise all of them on one plot by mapping `color` to `liquid` *inside*
+`aes()` - a mapping, so each substance gets its own points and its own
+fitted line, with a legend added automatically:
+
+```{r}
+#| eval: false
+ggplot(vapour_data, aes(x = ___, y = ___, color = ___)) +   # linearised axes; colour by substance
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE) +
+  labs(x = "___", y = "___", color = "___") +   # your own axis and legend labels
+  theme_classic()
+```
+
+For more on styling your plots, see the section at the end of this guide.
+
+## Collecting the results in one tibble
+
+Rather than juggling separate `slope_A`, `intercept_A`, `slope_B`,
+`intercept_B`, ... variables, it's much easier to gather one row per
+substance into a single tibble, then compute everything else with
+`mutate()` on that tibble directly. Here it is worked through concretely
+for two made-up substances and fitted models (substitute your own `lm()`
+objects and substance names):
+
+```{r}
+#| eval: false
+vapour_results <- tibble(
+  liquid    = c("Liquid A", "Liquid B"),
+  slope     = c(coef(lm_A)[[2]], coef(lm_B)[[2]]),
+  intercept = c(coef(lm_A)[[1]], coef(lm_B)[[1]]),
+  r2        = c(summary(lm_A)$r.squared, summary(lm_B)$r.squared)
+)
+
+vapour_results
+```
+
+Add one more entry to each of `liquid`, `slope`, `intercept` and `r2` per
+extra substance if you have more than two.
+
+::: {.callout-tip collapse="true"}
+## A tidier alternative, for reference
+`group_by(liquid)` + `summarise()` fits one line per substance in a single
+step, so you don't write a separate `lm()` call for each. It fits the
+model once per group, keeps it in a `model` column, and pulls the slope,
+intercept and R² out of it with the same `coef()` and `summary()` you'd
+use on a single `lm()`. If the `lm()`/`coef()`/`summary()` calls are
+unfamiliar, see the [linear regression
+reference](https://cpdse-edux.github.io/R_documentation/topics/linear-regression.html).
+
+```r
+vapour_results <- vapour_data %>%
+  group_by(liquid) %>%
+  summarise(
+    model     = list(lm(ln_p ~ inv_T, data = pick(everything()))),
+    intercept = coef(model[[1]])[[1]],
+    slope     = coef(model[[1]])[[2]],
+    r2        = summary(model[[1]])$r.squared
+  ) %>%
+  select(-model)
+```
+
+Same result as the tibble above, just scaling to any number of
+substances without adding a line per substance by hand.
+:::
+
+## Reporting the fitted line and R² on your figure
+
+A figure showing a fitted line is more useful with its equation and R² values reported somewhere - either directly on the plot, or written into the figure's caption. Which you use is mostly a matter of preference (and how many lines are on the same plot). For reporting directly on the plot, a guide can be found [here](https://cpdse-edux.github.io/R_documentation/topics/linear-regression.html). Alternatively, report the fitted line and R² in the figure caption rather than on the plot itself. The caption is just text, so record the slope, intercept and R² from the results data frame and add to your cpation (e.g. *"The fitted line for Liquid A is y = 1.23 - 4567x, R² = 0.987."*)
+
+## From slope and intercept to $\Delta_{vap}H$ and $\Delta_{vap}S$
+
+Comparing the linearised equation above to a straight line
+`y = slope * x + intercept` shows what the fitted numbers mean:
+the slope is $-\Delta_{vap}H / R$ and the intercept is $\Delta_{vap}S / R$. Rearrange and add both as new columns on
+the results tibble:
+
+```{r}
+#| eval: false
+R_gas <- 8.314   # J / (mol K)
+
+vapour_results <- vapour_results %>%
+  mutate(
+    DvapH_kJmol = ____,   # kJ/mol
+    DvapS_JKmol = ____    # J / (K mol)
+  )
+```
+
+## Standard and normal boiling points
+
+Two different "boiling points" are worth distinguishing here, and both
+are read off the same fitted line, just in different ways.
+
+The **standard boiling point** i.e. when `p = p0` (1 bar = 1000 mbar) is the temperature where the line crosses `ln(p/p0) = 0`. Rerrange the linearised Clausius-Clapeyron equation to determine the standard boiling point from $\Delta_{vap}H$ and $\Delta_{vap}S$.
+
+The **normal boiling point** is the temperature where `p` reaches normal
+atmospheric pressure (1 atm = 1013 mbar). This is the mirror image of
+extrapolating a fitted line to a new condition, covered earlier in the
+course: instead of reading a `y` value off the line at a known `x`, you
+solve `y = slope * x + intercept` for `x` at a known `y`.
+
+```{r}
+#| eval: false
+p_atm_mbar <- 1013
+ln_p_normal <- log(p_atm_mbar / p0_mbar)   # the "y" you're solving for x at
+
+vapour_results <- vapour_results %>%
+  mutate(
+    Tb_standard_K = ___,   # the standard boiling point in Kelvin
+    Tb_standard_C = ___,   # convert standard boiling point to Celsius 
+    inv_T_normal  = ___,   # solving y = slope*x + intercept for x, when p = 1 atm
+    Tb_normal_K   = ___,   # convert inverse temperature (1/T)
+    Tb_normal_C   = ___    # convert normal boiling point to Celsius
+  )
+
+```
+
+## Exporting your results
+
+`select()` the columns that actually belong in a report - the helper
+columns (`slope`, `intercept`, `inv_T_normal`, and so on) were only
+needed to get there. You can also deselect them with `select(-slope, -intercept, ...)` if you prefer.
+
+```{r}
+#| eval: false
+vapour_results_final <- vapour_results %>%
+  select(____)
+
+vapour_results_final
+```
+
+You can export the results to different file formats. `write_csv()` writes a `.csv`, the exact
+reverse of `read_csv()`. `write_xlsx()` (requires the `writexl` package) writes an `.xlsx` if you
+would rather open it in Excel. Use whichever suits you.
+
+```{r}
+#| eval: false
+write_csv(vapour_results_final, "vapour_pressure_results.csv")
+
+library(writexl)   # install once with install.packages("writexl")
+write_xlsx(vapour_results_final, "vapour_pressure_results.xlsx")
+```
+
+A figure can be saved the same way with `ggsave()`, which by default
+saves whichever plot was drawn most recently:
+
+```{r}
+#| eval: false
+ggsave("vapour_pressure_plot.png", width = 6, height = 4, dpi = 300)
+```
+
+
+## Tips for styling your plots
+
+Here are some optional tips for making your figures more readable and
+professional.
+
+### Point size
+
+The default size of points in `geom_point()` is often a bit small for a
+report figure. Adjust it with `size` (experiment with different
+numbers):
+
+```{r}
+#| eval: false
+geom_point(size = ____)
+```
+
+### General text size
+
+Most themes (e.g. `theme_classic()`) take a `base_size` argument that
+scales all text in the figure (axis titles, legend, etc.) at once:
+
+```{r}
+#| eval: false
+theme_classic(base_size = ____)
+```
+
+### Math in axis titles
+
+Plain text in `labs()` can't correctly show fractions, subscripts,
+superscripts or Greek letters, which the axis titles in this analysis all
+need - `1/T`, `ln(p/p0)`, units like `K⁻¹`. Use `expression()` instead:
+
+```{r}
+#| eval: false
+labs(
+  x = expression(1 / T ~ (K^{-1})),   # 1/T axis, unit K^-1
+  y = expression(ln(p / p[0]))        # ln(p/p0) axis
+)
+```
+
+A few building blocks you can combine inside `expression()`, using this
+analysis as the examples:
+
+- `x[number]` makes a subscript, e.g. `p[0]` → p₀ for the reference
+  pressure.
+- `x^{number}` makes a superscript, e.g. `K^{-1}` → K⁻¹, or
+  `J~K^{-1}~mol^{-1}` → J K⁻¹ mol⁻¹ for the units on $\Delta_{vap}S$.
+- `frac(a, b)` draws an actual fraction, e.g. `frac(1, T)` → $\frac{1}{T}$
+  stacked rather than a slash.
+- Greek letters are written by their English name, e.g. `Delta`, and
+  combine with a subscript for `Delta[vap] * H` → $\Delta_{vap}H$.
+- `degree` draws the ° symbol, e.g. `expression(T ~ (degree * C))` → T (°C).
+- `~` inserts a small space between parts; `*` joins them with no space.
+- Plain text needs to be in quotes - anything else can be interpreted as
+  a mathematical symbol or variable name.
+
+### Adjust axis limits
+
+Set `limits` to fix the axes, and `expand = c(0, 0)` to remove the
+automatic "padding" ggplot otherwise adds around the data.
+
+`limits` takes `c(min, max)` in the data's own units. Pick a range that comfortably
+contains all your points; anything falling outside the limits is dropped
+from the plot.
+
+```{r}
+#| eval: false
+scale_x_continuous(limits = c(____, ____), expand = c(0, 0)) +
+scale_y_continuous(limits = c(____, ____), expand = c(0, 0))
+```
+
+> **Note:** with `expand = c(0, 0)`, points sitting right in a corner are
+> often half cut off by the edge of the figure. Try adding
+> `coord_cartesian(clip = "off")` if that happens.
+
+### Regression lines that extend beyond the data points
+
+`geom_smooth()` by default only draws the line between the lowest and
+highest data point. `fullrange = TRUE` instead asks it to extend across
+the whole range of the axis **scale**:
+
+```{r}
+#| eval: false
+geom_smooth(method = "lm", se = FALSE, fullrange = TRUE)
+```
+
+> **Tip:** `fullrange = TRUE` only extends as far as the axis scale itself — so it only has a visible effect if that range goes beyond your data, e.g. via `scale_x_continuous(limits = c(___, ___))`. Without wider `limits`, the line just spans the data as usual.
+
+### Shape and color together - combine into one legend
+
+`shape` works just like `color`, but gives each group its own point
+shape (circle, triangle, cross) instead of a color - useful for
+colour-blind readers, and because colors often disappear in
+black-and-white printing. Add it in the same place as `color`, inside
+`aes()`.
+
+If you map `color` and `shape` to the **same** variable, ggplot
+automatically merges the two legends into one instead of showing two
+separate ones - this makes the figure less cluttered and easier to read:
+
+```{r}
+#| eval: false
+ggplot(data, aes(x = ____, y = ____, color = ___, shape = ____)) +
+  geom_point() +
+  labs(color = "____", shape = "____")   # same title in both places -> merges into one legend
+```
+
+> **Note:** the title in `labs()` must be identical for `color` and
+> `shape` (literally the same text string), or the two legends stay
+> separate.

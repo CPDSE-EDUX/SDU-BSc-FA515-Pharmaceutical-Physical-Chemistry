@@ -4,7 +4,7 @@ Teaching materials for **FA515: Pharmaceutical Physical Chemistry** (5 ECTS, Bac
 
 FA515 covers thermodynamic functions, phase diagrams and phase transitions, ideal and non-ideal solutions, acid-base equilibria, ionic solutions, surface tension, and reaction kinetics. This repository contains the R/Quarto activities that introduce students to data science through these topics. Code always serves the chemistry, not the other way around.
 
-Course description: [FA515 at SDU](https://odin.sdu.dk/sitecore/index.php?a=fagbesk&id=202312&lang=en&listid=)
+Course description: [FA515 at SDU](https://odin.sdu.dk/sitecore/index.php?a=fagbesk&id=209672&listid=1751&lang=en)
 
 ## Activities
 

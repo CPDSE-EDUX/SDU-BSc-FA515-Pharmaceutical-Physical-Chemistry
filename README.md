@@ -1,36 +1,57 @@
-# FA515: Pharmaceutical Physical Chemistry — R & Data Science Materials
+# FA515: Pharmaceutical Physical Chemistry
 
-Teaching materials for **FA515: Pharmaceutical Physical Chemistry** (5 ECTS, Bachelor level, Autumn semester) at the University of Southern Denmark (SDU), developed as part of [CPDSE](https://cpdse.dk)'s work integrating data science and R programming into the pharmacy curriculum.
+Data science material for **FA515 Pharmaceutical Physical Chemistry** (BSc Pharmacy, University of Southern Denmark). The material shows students how to treat and visualise physical chemistry data in R and write about it in Quarto.
 
-FA515 covers thermodynamic functions, phase diagrams and phase transitions, ideal and non-ideal solutions, acid-base equilibria, ionic solutions, surface tension, and reaction kinetics. This repository contains the R/Quarto activities that introduce students to data science through these topics. Code always serves the chemistry, not the other way around.
+FA515 covers thermodynamic functions, phase diagrams and phase transitions, ideal and non-ideal solutions, acid-base equilibria, ionic solutions, surface tension, and reaction kinetics. Course description: [FA515 at SDU](https://odin.sdu.dk/sitecore/index.php?a=fagbesk&id=209672&listid=1751&lang=en).
 
-Course description: [FA515 at SDU](https://odin.sdu.dk/sitecore/index.php?a=fagbesk&id=209672&listid=1751&lang=en)
+This repository holds the R and Quarto material only. The full course material, including the lab manual and the course schedule, lives in ItsLearning. Solutions are not published here.
 
-## Activities
+The material is written in English.
 
-### `intro/` — Introduction to R
-A first hands-on introduction to R for students with no prior programming experience: the basics needed before using R in the physical chemistry activities below.
+## Data Science Learning Outcomes
 
-### `kinetics_assigment/` — Reaction Kinetics
-Data analysis activity on reaction kinetics, stability, and shelf-life estimation. Includes the assignment brief, the R/Quarto guide, and example stability data (concentration vs. time at different conditions).
+The learning outcome from the official course description that this material supports. The student demonstrates the ability to:
 
-### `vapour_pressure/` — Vapour Pressure
-Data analysis activity on vapour pressure of pure liquids and mixtures. Includes the assignment brief, the R/Quarto guide, and example data. **Work in progress** — content here may still change ahead of use in the course.
-
-### `partial_derivatives/` — Partial Derivatives (interactive app)
-A Shiny app (`app.R`) for exploring partial derivatives of multivariable functions interactively. Shared here as the R source rather than a deployed/hosted app, so it can be read, adapted, and run locally (`shiny::runApp()`) by anyone. Not currently in active use in the course.
+- Perform data treatment and visualization in R.
 
 ## Structure
 
 ```
-intro/
-kinetics_assigment/
-vapour_pressure/
-partial_derivatives/
+├── intro/                  Getting started with R
+├── quarto_guide/           Getting started with Quarto
+├── kinetics_assignment/    Reaction kinetics, stability and shelf life
+├── vapour_pressure/        Vapour pressure and the Clausius-Clapeyron equation
+├── partial_derivatives/    Interactive app on partial derivatives (not currently used in the course)
+├── CITATION.cff
+├── LICENSE                 CC BY 4.0 (teaching content)
+└── LICENSE-code            MIT (code)
 ```
 
-*(Each activity folder bundles its own guide, example data, and assignment brief where applicable.)*
+Each folder is self-contained: the guide and the files it needs sit together, so students can download a single folder and work from it. Each folder has its own README describing its contents.
 
-## License
+## Setup
 
-To be added once the repository is populated — the materials will be openly licensed for reuse in teaching (with attribution). Solution keys and internal planning documents are not published here regardless.
+You need:
+
+- [R](https://cran.r-project.org/) (version 4.3 or newer)
+- [RStudio](https://posit.co/download/rstudio-desktop/) (includes Quarto)
+
+Install the R packages used in the course:
+
+```r
+install.packages(c("tidyverse", "readxl", "writexl", "plotly", "shiny"))
+```
+
+Rendering Quarto documents to PDF also needs TinyTeX, see `quarto_guide/`.
+
+## Versions
+
+The `main` branch holds the material for the current year. When a course run ends, it is archived in a branch named after the year (for example `2026`).
+
+## Citation and license
+
+If you reuse or adapt the material, please cite it using [CITATION.cff](CITATION.cff) (GitHub shows a "Cite this repository" button).
+
+Teaching content is licensed under [CC BY 4.0](LICENSE) and code under [MIT](LICENSE-code).
+
+Part of the [CPDSE](https://github.com/CPDSE-EDUX) teaching material from the Center for Pharmaceutical Data Science Education.

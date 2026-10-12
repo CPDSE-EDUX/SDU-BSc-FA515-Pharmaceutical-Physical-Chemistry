@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Sebastian Jakobsen">
-<meta name="dcterms.date" content="2026-09-07">
+<meta name="dcterms.date" content="2026-09-23">
 
 <title>Vapour pressure analysis in R</title>
 <style>
@@ -2400,7 +2400,7 @@ window.Quarto = {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">September 7, 2026</p>
+      <p class="date">September 23, 2026</p>
     </div>
   </div>
   
@@ -2414,8 +2414,8 @@ window.Quarto = {
 
 <section id="what-this-guide-is-for" class="level2" data-number="1">
 <h2 data-number="1" class="anchored" data-anchor-id="what-this-guide-is-for"><span class="header-section-number">1</span> What this guide is for</h2>
-<p>This guide shows how to go from measured vapour pressure vs. temperature data to the thermodynamic quantities that describe a liquid’s liquid-vapour equilibrium: the enthalpy and entropy of vaporisation (<span class="math inline">\(\Delta_{vap}H\)</span>, <span class="math inline">\(\Delta_{vap}S\)</span>), and both the standard and normal boiling point. It works the same way whether your data is something you measured yourself at the bench and recorded in Excel, or a larger dataset you were given as a <code>.csv</code> file.</p>
-<p>The overall approach - turn a non-linear physical relationship into something you can fit a straight line to, then read the physical quantities off the slope and intercept - is the same one used earlier in the course for temperature-dependent rate constants. Where a step is essentially identical to that earlier case, this guide says so rather than re-explaining it from scratch, so work through that material first if anything here feels unfamiliar.</p>
+<p>This is an <em>R</em> guide that shows how to go from measured vapour pressure vs. temperature data to the thermodynamic quantities that describe a liquid’s liquid-vapour equilibrium using the Clausius–Clapeyron relation</p>
+<p>The overall approach - turn a non-linear physical relationship into something you can fit a straight line to, then read the physical quantities off the slope and intercept - is the same one used earlier for temperature-dependent reaction rate constants. Where a step is essentially identical to that earlier case, this guide says so rather than re-explaining it from scratch, so work through that material first if anything here feels unfamiliar.</p>
 <p>Some code below is complete; some has blanks marked <code>___</code> for you to fill in with your own column names, values, or file paths. Basic R mechanics (assignment, <code>mutate()</code>, <code>filter()</code>, <code>lm()</code>, plotting) are covered in the introductory R guide and are not re-explained here either.</p>
 </section>
 <section id="setting-up" class="level2" data-number="2">
@@ -2429,13 +2429,13 @@ window.Quarto = {
 <h2 data-number="3" class="anchored" data-anchor-id="importing-your-data"><span class="header-section-number">3</span> Importing your data</h2>
 <section id="from-your-own-measurements-recorded-in-excel" class="level3" data-number="3.1">
 <h3 data-number="3.1" class="anchored" data-anchor-id="from-your-own-measurements-recorded-in-excel"><span class="header-section-number">3.1</span> From your own measurements, recorded in Excel</h3>
-<p>If you recorded your own readings by hand during a practical, they are probably sitting in an Excel file rather than a <code>.csv</code>. <code>readxl</code>’s <code>read_excel()</code> reads a <code>.xlsx</code> file straight into a tibble, the same way <code>read_csv()</code> reads a <code>.csv</code> - both hand you back a tidy data frame, <code>read_excel()</code> just points at a different file type.</p>
+<p>If you recorded your own readings by hand during a lab exercise, they are probably sitting in an Excel file rather than a <code>.csv</code>. <code>readxl</code>’s <code>read_excel()</code> reads a <code>.xlsx</code> file straight into a tibble, the same way <code>read_csv()</code> reads a <code>.csv</code> - both hand you back a tidy data frame, <code>read_excel()</code> just points at a different file type.</p>
 <div class="cell">
 <div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>vapour_data <span class="ot">&lt;-</span> <span class="fu">read_excel</span>(<span class="st">&quot;_______&quot;</span>)   <span class="co"># fill in your file&#39;s path/name</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <section id="structuring-your-spreadsheet-so-it-imports-cleanly" class="level4" data-number="3.1.1">
 <h4 data-number="3.1.1" class="anchored" data-anchor-id="structuring-your-spreadsheet-so-it-imports-cleanly"><span class="header-section-number">3.1.1</span> Structuring your spreadsheet so it imports cleanly</h4>
-<p><code>read_excel()</code> works best when the sheet underneath is already tidy - one variable per column, one measurement per row - rather than laid out the way you might present it in a report. A few habits make the difference:</p>
+<p><code>read_excel()</code> works best when the sheet underneath is already tidy, meaning one variable per column, one measurement per row. A few habits make the difference:</p>
 <ul>
 <li>Start the table in the top-left corner: the first header in cell <code>A1</code>, the data filling out from there. <code>read_excel()</code> begins reading at the first non-empty cell.</li>
 <li>Give every column a single, plain header in the first row.</li>
@@ -2480,10 +2480,7 @@ window.Quarto = {
 </section>
 <section id="from-a-larger-provided-csv-dataset" class="level3" data-number="3.2">
 <h3 data-number="3.2" class="anchored" data-anchor-id="from-a-larger-provided-csv-dataset"><span class="header-section-number">3.2</span> From a larger provided csv dataset</h3>
-<p>If instead you’ve been given a ready-made dataset as a <code>.csv</code> file import it the way you already know:</p>
-<div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>vapour_data <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(<span class="st">&quot;_______&quot;</span>)   <span class="co"># fill in your file&#39;s path/name</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-</div>
+<p>If instead you’ve been given a ready-made dataset as a <code>.csv</code> file import it the way you already know using <code>read_csv()</code>.</p>
 <p>The same tidy layout applies either way: whatever the file type, you want one row per measurement and one column per variable before moving on.</p>
 </section>
 </section>
@@ -2491,10 +2488,10 @@ window.Quarto = {
 <h2 data-number="4" class="anchored" data-anchor-id="if-applicable-correcting-raw-instrument-readings"><span class="header-section-number">4</span> (If applicable) Correcting raw instrument readings</h2>
 <p>The manometer reading is not the vapour pressure yet: it is measured against the zero point (“nulpunktet”), the reading taken with the container evacuated before any liquid is added. Subtract that zero point to get the real pressure. Define it once near the top of your script, with a comment giving its meaning and unit, then correct the column in its own <code>mutate()</code> step before anything else:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>p_zero_mbar <span class="ot">&lt;-</span> ___   <span class="co"># manometer zero point, mbar - substitute your own value</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>vapour_data <span class="ot">&lt;-</span> vapour_data <span class="sc">%&gt;%</span></span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">p_real_mbar =</span> p_mano_mbar <span class="sc">-</span> p_zero_mbar)  </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>p_zero_mbar <span class="ot">&lt;-</span> ___   <span class="co"># manometer zero point, mbar - substitute your own value</span></span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>vapour_data <span class="ot">&lt;-</span> vapour_data <span class="sc">%&gt;%</span></span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">p_real_mbar =</span> p_mano_mbar <span class="sc">-</span> p_zero_mbar)  </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>If your pressure column is already the true vapour pressure, skip this step and work directly with the column you were given.</p>
 </section>
@@ -2517,14 +2514,14 @@ window.Quarto = {
 <h3 data-number="5.1" class="anchored" data-anchor-id="setting-up-the-linearisation"><span class="header-section-number">5.1</span> Setting up the linearisation</h3>
 <p>Same as the Arrhenius linearisation: add the line’s two axes as columns - <code>inv_T</code> (<code>1 / T_K</code>, with <code>T_K</code> in Kelvin) for x, and <code>ln_p</code> (<code>log(p / p0)</code>) for y.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>p0_mbar <span class="ot">&lt;-</span> <span class="dv">1000</span>   <span class="co"># standard pressure, 1 bar, in the same unit as your p column</span></span>
-<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>vapour_data <span class="ot">&lt;-</span> vapour_data <span class="sc">%&gt;%</span></span>
-<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">T_K   =</span> ___,    <span class="co"># your temperature column, converted to Kelvin</span></span>
-<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">inv_T =</span> ___,    <span class="co"># 1 / T_K</span></span>
-<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">ln_p  =</span> ___     <span class="co"># natural log of (your pressure column / p0_mbar)</span></span>
-<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>p0_mbar <span class="ot">&lt;-</span> <span class="dv">1000</span>   <span class="co"># standard pressure, 1 bar, in the same unit as your p column</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>vapour_data <span class="ot">&lt;-</span> vapour_data <span class="sc">%&gt;%</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">T_K   =</span> ___,    <span class="co"># your temperature column, converted to Kelvin</span></span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">inv_T =</span> ___,    <span class="co"># 1 / T_K</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">ln_p  =</span> ___     <span class="co"># natural log of (your pressure column / p0_mbar)</span></span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 </section>
@@ -2532,20 +2529,20 @@ window.Quarto = {
 <h2 data-number="6" class="anchored" data-anchor-id="fitting-a-line-per-substance"><span class="header-section-number">6</span> Fitting a line per substance</h2>
 <p>With more than one liquid in the same data frame, fit each one separately - the same pattern already covered for handling several conditions in the same dataset earlier in the course: check the exact category values, then <code>filter()</code> to one substance and pass that straight into <code>lm()</code>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(vapour_data<span class="sc">$</span>liquid)   <span class="co"># check the exact spelling of each substance</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">unique</span>(vapour_data<span class="sc">$</span>liquid)   <span class="co"># check the exact spelling of each substance</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>lm_A <span class="ot">&lt;-</span> <span class="fu">lm</span>(___ <span class="sc">~</span> ___, <span class="at">data =</span> <span class="fu">filter</span>(___))</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="co"># add one more lm() line per substance, following the same pattern</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb6"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>lm_A <span class="ot">&lt;-</span> <span class="fu">lm</span>(___ <span class="sc">~</span> ___, <span class="at">data =</span> <span class="fu">filter</span>(___))</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="co"># add one more lm() line per substance, following the same pattern</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Make sure to name each <code>lm()</code> object something that makes sense for the substance it fits.</p>
 <p>Visualise all of them on one plot by mapping <code>color</code> to <code>liquid</code> <em>inside</em> <code>aes()</code> - a mapping, so each substance gets its own points and its own fitted line, with a legend added automatically:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(vapour_data, <span class="fu">aes</span>(<span class="at">x =</span> ___, <span class="at">y =</span> ___, <span class="at">color =</span> ___)) <span class="sc">+</span>   <span class="co"># linearised axes; colour by substance</span></span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">&quot;lm&quot;</span>, <span class="at">se =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;___&quot;</span>, <span class="at">y =</span> <span class="st">&quot;___&quot;</span>, <span class="at">color =</span> <span class="st">&quot;___&quot;</span>) <span class="sc">+</span>   <span class="co"># your own axis and legend labels</span></span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(vapour_data, <span class="fu">aes</span>(<span class="at">x =</span> ___, <span class="at">y =</span> ___, <span class="at">color =</span> ___)) <span class="sc">+</span>   <span class="co"># linearised axes; colour by substance</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">&quot;lm&quot;</span>, <span class="at">se =</span> <span class="cn">FALSE</span>) <span class="sc">+</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">&quot;___&quot;</span>, <span class="at">y =</span> <span class="st">&quot;___&quot;</span>, <span class="at">color =</span> <span class="st">&quot;___&quot;</span>) <span class="sc">+</span>   <span class="co"># your own axis and legend labels</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_classic</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>For more on styling your plots, see the section at the end of this guide.</p>
 </section>
@@ -2553,58 +2550,55 @@ window.Quarto = {
 <h2 data-number="7" class="anchored" data-anchor-id="collecting-the-results-in-one-tibble"><span class="header-section-number">7</span> Collecting the results in one tibble</h2>
 <p>Rather than juggling separate <code>slope_A</code>, <code>intercept_A</code>, <code>slope_B</code>, <code>intercept_B</code>, … variables, it’s much easier to gather one row per substance into a single tibble, then compute everything else with <code>mutate()</code> on that tibble directly. Here it is worked through concretely for two made-up substances and fitted models (substitute your own <code>lm()</code> objects and substance names):</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>vapour_results <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">liquid    =</span> <span class="fu">c</span>(<span class="st">&quot;Liquid A&quot;</span>, <span class="st">&quot;Liquid B&quot;</span>),</span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">slope     =</span> <span class="fu">c</span>(<span class="fu">coef</span>(lm_A)[[<span class="dv">2</span>]], <span class="fu">coef</span>(lm_B)[[<span class="dv">2</span>]]),</span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">intercept =</span> <span class="fu">c</span>(<span class="fu">coef</span>(lm_A)[[<span class="dv">1</span>]], <span class="fu">coef</span>(lm_B)[[<span class="dv">1</span>]]),</span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2        =</span> <span class="fu">c</span>(<span class="fu">summary</span>(lm_A)<span class="sc">$</span>r.squared, <span class="fu">summary</span>(lm_B)<span class="sc">$</span>r.squared)</span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>vapour_results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>vapour_results <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">liquid    =</span> <span class="fu">c</span>(<span class="st">&quot;Liquid A&quot;</span>, <span class="st">&quot;Liquid B&quot;</span>),</span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">slope     =</span> <span class="fu">c</span>(<span class="fu">coef</span>(lm_A)[[<span class="dv">2</span>]], <span class="fu">coef</span>(lm_B)[[<span class="dv">2</span>]]),</span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">intercept =</span> <span class="fu">c</span>(<span class="fu">coef</span>(lm_A)[[<span class="dv">1</span>]], <span class="fu">coef</span>(lm_B)[[<span class="dv">1</span>]]),</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">r2        =</span> <span class="fu">c</span>(<span class="fu">summary</span>(lm_A)<span class="sc">$</span>r.squared, <span class="fu">summary</span>(lm_B)<span class="sc">$</span>r.squared)</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>vapour_results</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>Add one more entry to each of <code>liquid</code>, <code>slope</code>, <code>intercept</code> and <code>r2</code> per extra substance if you have more than two.</p>
 <div class="callout callout-style-default callout-tip callout-titled">
-<div class="callout-header d-flex align-content-center collapsed" data-bs-toggle="collapse" data-bs-target=".callout-1-contents" aria-controls="callout-1" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
 <span class="screen-reader-only">Tip</span>A tidier alternative, for reference
 </div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-1" class="callout-1-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p><code>group_by(liquid)</code> + <code>summarise()</code> fits one line per substance in a single step, so you don’t write a separate <code>lm()</code> call for each. It fits the model once per group, keeps it in a <code>model</code> column, and pulls the slope, intercept and R² out of it with the same <code>coef()</code> and <code>summary()</code> you’d use on a single <code>lm()</code>. If the <code>lm()</code>/<code>coef()</code>/<code>summary()</code> calls are unfamiliar, see the <a href="https://cpdse-edux.github.io/R_documentation/topics/linear-regression.html">linear regression reference</a>.</p>
-<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>vapour_results <span class="ot">&lt;-</span> vapour_data <span class="sc">%&gt;%</span></span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(liquid) <span class="sc">%&gt;%</span></span>
-<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
-<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">model     =</span> <span class="fu">list</span>(<span class="fu">lm</span>(ln_p <span class="sc">~</span> inv_T, <span class="at">data =</span> <span class="fu">pick</span>(<span class="fu">everything</span>()))),</span>
-<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">intercept =</span> <span class="fu">coef</span>(model[[<span class="dv">1</span>]])[[<span class="dv">1</span>]],</span>
-<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">slope     =</span> <span class="fu">coef</span>(model[[<span class="dv">1</span>]])[[<span class="dv">2</span>]],</span>
-<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">r2        =</span> <span class="fu">summary</span>(model[[<span class="dv">1</span>]])<span class="sc">$</span>r.squared</span>
-<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
-<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb9"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>vapour_results <span class="ot">&lt;-</span> vapour_data <span class="sc">%&gt;%</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(liquid) <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">model     =</span> <span class="fu">list</span>(<span class="fu">lm</span>(ln_p <span class="sc">~</span> inv_T, <span class="at">data =</span> <span class="fu">pick</span>(<span class="fu">everything</span>()))),</span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">intercept =</span> <span class="fu">coef</span>(model[[<span class="dv">1</span>]])[[<span class="dv">1</span>]],</span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">slope     =</span> <span class="fu">coef</span>(model[[<span class="dv">1</span>]])[[<span class="dv">2</span>]],</span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">r2        =</span> <span class="fu">summary</span>(model[[<span class="dv">1</span>]])<span class="sc">$</span>r.squared</span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>model)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <p>Same result as the tibble above, just scaling to any number of substances without adding a line per substance by hand.</p>
-</div>
 </div>
 </div>
 </section>
 <section id="reporting-the-fitted-line-and-r²-on-your-figure" class="level2" data-number="8">
 <h2 data-number="8" class="anchored" data-anchor-id="reporting-the-fitted-line-and-r²-on-your-figure"><span class="header-section-number">8</span> Reporting the fitted line and R² on your figure</h2>
-<p>A figure showing a fitted line is more useful with its equation and R² values reported somewhere - either directly on the plot, or written into the figure’s caption. Which you use is mostly a matter of preference (and how many lines are on the same plot). For reporting directly on the plot, a guide can be found <a href="https://cpdse-edux.github.io/R_documentation/topics/linear-regression.html">here</a>. Alternatively, report the fitted line and R² in the figure caption rather than on the plot itself. The caption is just text, so record the slope, intercept and R² from the results data frame and add to your cpation (e.g. <em>“The fitted line for Liquid A is y = 1.23 - 4567x, R² = 0.987.”</em>)</p>
+<p>A figure showing a fitted line is more useful with its equation and R² values reported somewhere - either directly on the plot, or written into the figure’s caption. Which you use is mostly a matter of preference (and how many lines are on the same plot). For reporting directly on the plot, a guide can be found <a href="https://cpdse-edux.github.io/R_documentation/topics/linear-regression.html">here</a>. Alternatively, report the fitted line and R² in the figure caption rather than on the plot itself. Record the slope, intercept and R² from the results data frame and add to your caption (e.g. <em>“The fitted line for Liquid A is y = 1.23 - 4567x, R² = 0.987.”</em>)</p>
 </section>
 <section id="from-slope-and-intercept-to-delta_vaph-and-delta_vaps" class="level2" data-number="9">
 <h2 data-number="9" class="anchored" data-anchor-id="from-slope-and-intercept-to-delta_vaph-and-delta_vaps"><span class="header-section-number">9</span> From slope and intercept to <span class="math inline">\(\Delta_{vap}H\)</span> and <span class="math inline">\(\Delta_{vap}S\)</span></h2>
 <p>Comparing the linearised equation above to a straight line <code>y = slope * x + intercept</code> shows what the fitted numbers mean: the slope is <span class="math inline">\(-\Delta_{vap}H / R\)</span> and the intercept is <span class="math inline">\(\Delta_{vap}S / R\)</span>. Rearrange and add both as new columns on the results tibble:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>R_gas <span class="ot">&lt;-</span> <span class="fl">8.314</span>   <span class="co"># J / (mol K)</span></span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>vapour_results <span class="ot">&lt;-</span> vapour_results <span class="sc">%&gt;%</span></span>
-<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">DvapH_kJmol =</span> ____,   <span class="co"># kJ/mol</span></span>
-<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">DvapS_JKmol =</span> ____    <span class="co"># J / (K mol)</span></span>
-<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>R_gas <span class="ot">&lt;-</span> <span class="fl">8.314</span>   <span class="co"># J / (mol K)</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>vapour_results <span class="ot">&lt;-</span> vapour_results <span class="sc">%&gt;%</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">DvapH_kJmol =</span> ____,   <span class="co"># kJ/mol</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">DvapS_JKmol =</span> ____    <span class="co"># J / (K mol)</span></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="standard-and-normal-boiling-points" class="level2" data-number="10">
@@ -2613,38 +2607,38 @@ window.Quarto = {
 <p>The <strong>standard boiling point</strong> i.e. when <code>p = p0</code> (1 bar = 1000 mbar) is the temperature where the line crosses <code>ln(p/p0) = 0</code>. Rerrange the linearised Clausius-Clapeyron equation to determine the standard boiling point from <span class="math inline">\(\Delta_{vap}H\)</span> and <span class="math inline">\(\Delta_{vap}S\)</span>.</p>
 <p>The <strong>normal boiling point</strong> is the temperature where <code>p</code> reaches normal atmospheric pressure (1 atm = 1013 mbar). This is the mirror image of extrapolating a fitted line to a new condition, covered earlier in the course: instead of reading a <code>y</code> value off the line at a known <code>x</code>, you solve <code>y = slope * x + intercept</code> for <code>x</code> at a known <code>y</code>.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>p_atm_mbar <span class="ot">&lt;-</span> <span class="dv">1013</span></span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>ln_p_normal <span class="ot">&lt;-</span> <span class="fu">log</span>(p_atm_mbar <span class="sc">/</span> p0_mbar)   <span class="co"># the &quot;y&quot; you&#39;re solving for x at</span></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>vapour_results <span class="ot">&lt;-</span> vapour_results <span class="sc">%&gt;%</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">Tb_standard_K =</span> ___,   <span class="co"># the standard boiling point in Kelvin</span></span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">Tb_standard_C =</span> ___,   <span class="co"># convert standard boiling point to Celsius </span></span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">inv_T_normal  =</span> ___,   <span class="co"># solving y = slope*x + intercept for x, when p = 1 atm</span></span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">Tb_normal_K   =</span> ___,   <span class="co"># convert inverse temperature (1/T)</span></span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">Tb_normal_C   =</span> ___    <span class="co"># convert normal boiling point to Celsius</span></span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb11"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>p_atm_mbar <span class="ot">&lt;-</span> <span class="dv">1013</span></span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>ln_p_normal <span class="ot">&lt;-</span> <span class="fu">log</span>(p_atm_mbar <span class="sc">/</span> p0_mbar)   <span class="co"># the &quot;y&quot; you&#39;re solving for x at</span></span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a>vapour_results <span class="ot">&lt;-</span> vapour_results <span class="sc">%&gt;%</span></span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">Tb_standard_K =</span> ___,   <span class="co"># the standard boiling point in Kelvin</span></span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">Tb_standard_C =</span> ___,   <span class="co"># convert standard boiling point to Celsius </span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">inv_T_normal  =</span> ___,   <span class="co"># solving y = slope*x + intercept for x, when p = 1 atm</span></span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">Tb_normal_K   =</span> ___,   <span class="co"># convert inverse temperature (1/T)</span></span>
+<span id="cb11-10"><a href="#cb11-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">Tb_normal_C   =</span> ___    <span class="co"># convert normal boiling point to Celsius</span></span>
+<span id="cb11-11"><a href="#cb11-11" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="exporting-your-results" class="level2" data-number="11">
 <h2 data-number="11" class="anchored" data-anchor-id="exporting-your-results"><span class="header-section-number">11</span> Exporting your results</h2>
 <p><code>select()</code> the columns that actually belong in a report - the helper columns (<code>slope</code>, <code>intercept</code>, <code>inv_T_normal</code>, and so on) were only needed to get there. You can also deselect them with <code>select(-slope, -intercept, ...)</code> if you prefer.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>vapour_results_final <span class="ot">&lt;-</span> vapour_results <span class="sc">%&gt;%</span></span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(____)</span>
-<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>vapour_results_final</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>vapour_results_final <span class="ot">&lt;-</span> vapour_results <span class="sc">%&gt;%</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(____)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>vapour_results_final</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>You can export the results to different file formats. <code>write_csv()</code> writes a <code>.csv</code>, the exact reverse of <code>read_csv()</code>. <code>write_xlsx()</code> (requires the <code>writexl</code> package) writes an <code>.xlsx</code> if you would rather open it in Excel. Use whichever suits you.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(vapour_results_final, <span class="st">&quot;vapour_pressure_results.csv&quot;</span>)</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(writexl)   <span class="co"># install once with install.packages(&quot;writexl&quot;)</span></span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">write_xlsx</span>(vapour_results_final, <span class="st">&quot;vapour_pressure_results.xlsx&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">write_csv</span>(vapour_results_final, <span class="st">&quot;vapour_pressure_results.csv&quot;</span>)</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(writexl)   <span class="co"># install once with install.packages(&quot;writexl&quot;)</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="fu">write_xlsx</span>(vapour_results_final, <span class="st">&quot;vapour_pressure_results.xlsx&quot;</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>A figure can be saved the same way with <code>ggsave()</code>, which by default saves whichever plot was drawn most recently:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">&quot;vapour_pressure_plot.png&quot;</span>, <span class="at">width =</span> <span class="dv">6</span>, <span class="at">height =</span> <span class="dv">4</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggsave</span>(<span class="st">&quot;vapour_pressure_plot.png&quot;</span>, <span class="at">width =</span> <span class="dv">6</span>, <span class="at">height =</span> <span class="dv">4</span>, <span class="at">dpi =</span> <span class="dv">300</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="tips-for-styling-your-plots" class="level2" data-number="12">
@@ -2654,24 +2648,24 @@ window.Quarto = {
 <h3 data-number="12.1" class="anchored" data-anchor-id="point-size"><span class="header-section-number">12.1</span> Point size</h3>
 <p>The default size of points in <code>geom_point()</code> is often a bit small for a report figure. Adjust it with <code>size</code> (experiment with different numbers):</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_point</span>(<span class="at">size =</span> ____)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_point</span>(<span class="at">size =</span> ____)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="general-text-size" class="level3" data-number="12.2">
 <h3 data-number="12.2" class="anchored" data-anchor-id="general-text-size"><span class="header-section-number">12.2</span> General text size</h3>
 <p>Most themes (e.g. <code>theme_classic()</code>) take a <code>base_size</code> argument that scales all text in the figure (axis titles, legend, etc.) at once:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_classic</span>(<span class="at">base_size =</span> ____)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">theme_classic</span>(<span class="at">base_size =</span> ____)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 </section>
 <section id="math-in-axis-titles" class="level3" data-number="12.3">
 <h3 data-number="12.3" class="anchored" data-anchor-id="math-in-axis-titles"><span class="header-section-number">12.3</span> Math in axis titles</h3>
 <p>Plain text in <code>labs()</code> can’t correctly show fractions, subscripts, superscripts or Greek letters, which the axis titles in this analysis all need - <code>1/T</code>, <code>ln(p/p0)</code>, units like <code>K⁻¹</code>. Use <code>expression()</code> instead:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">labs</span>(</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="fu">expression</span>(<span class="dv">1</span> <span class="sc">/</span> T <span class="sc">~</span> (K<span class="sc">^</span>{<span class="sc">-</span><span class="dv">1</span>})),   <span class="co"># 1/T axis, unit K^-1</span></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">y =</span> <span class="fu">expression</span>(<span class="fu">ln</span>(p <span class="sc">/</span> p[<span class="dv">0</span>]))        <span class="co"># ln(p/p0) axis</span></span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a><span class="fu">labs</span>(</span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">x =</span> <span class="fu">expression</span>(<span class="dv">1</span> <span class="sc">/</span> T <span class="sc">~</span> (K<span class="sc">^</span>{<span class="sc">-</span><span class="dv">1</span>})),   <span class="co"># 1/T axis, unit K^-1</span></span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">y =</span> <span class="fu">expression</span>(<span class="fu">ln</span>(p <span class="sc">/</span> p[<span class="dv">0</span>]))        <span class="co"># ln(p/p0) axis</span></span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <p>A few building blocks you can combine inside <code>expression()</code>, using this analysis as the examples:</p>
 <ul>
@@ -2689,8 +2683,8 @@ window.Quarto = {
 <p>Set <code>limits</code> to fix the axes, and <code>expand = c(0, 0)</code> to remove the automatic “padding” ggplot otherwise adds around the data.</p>
 <p><code>limits</code> takes <code>c(min, max)</code> in the data’s own units. Pick a range that comfortably contains all your points; anything falling outside the limits is dropped from the plot.</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scale_x_continuous</span>(<span class="at">limits =</span> <span class="fu">c</span>(____, ____), <span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)) <span class="sc">+</span></span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">scale_y_continuous</span>(<span class="at">limits =</span> <span class="fu">c</span>(____, ____), <span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="fu">scale_x_continuous</span>(<span class="at">limits =</span> <span class="fu">c</span>(____, ____), <span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>)) <span class="sc">+</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">scale_y_continuous</span>(<span class="at">limits =</span> <span class="fu">c</span>(____, ____), <span class="at">expand =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">0</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <blockquote class="blockquote">
 <p><strong>Note:</strong> with <code>expand = c(0, 0)</code>, points sitting right in a corner are often half cut off by the edge of the figure. Try adding <code>coord_cartesian(clip = &quot;off&quot;)</code> if that happens.</p>
@@ -2700,7 +2694,7 @@ window.Quarto = {
 <h3 data-number="12.5" class="anchored" data-anchor-id="regression-lines-that-extend-beyond-the-data-points"><span class="header-section-number">12.5</span> Regression lines that extend beyond the data points</h3>
 <p><code>geom_smooth()</code> by default only draws the line between the lowest and highest data point. <code>fullrange = TRUE</code> instead asks it to extend across the whole range of the axis <strong>scale</strong>:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">&quot;lm&quot;</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">fullrange =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">geom_smooth</span>(<span class="at">method =</span> <span class="st">&quot;lm&quot;</span>, <span class="at">se =</span> <span class="cn">FALSE</span>, <span class="at">fullrange =</span> <span class="cn">TRUE</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <blockquote class="blockquote">
 <p><strong>Tip:</strong> <code>fullrange = TRUE</code> only extends as far as the axis scale itself — so it only has a visible effect if that range goes beyond your data, e.g. via <code>scale_x_continuous(limits = c(___, ___))</code>. Without wider <code>limits</code>, the line just spans the data as usual.</p>
@@ -2711,9 +2705,9 @@ window.Quarto = {
 <p><code>shape</code> works just like <code>color</code>, but gives each group its own point shape (circle, triangle, cross) instead of a color - useful for colour-blind readers, and because colors often disappear in black-and-white printing. Add it in the same place as <code>color</code>, inside <code>aes()</code>.</p>
 <p>If you map <code>color</code> and <code>shape</code> to the <strong>same</strong> variable, ggplot automatically merges the two legends into one instead of showing two separate ones - this makes the figure less cluttered and easier to read:</p>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(data, <span class="fu">aes</span>(<span class="at">x =</span> ____, <span class="at">y =</span> ____, <span class="at">color =</span> ___, <span class="at">shape =</span> ____)) <span class="sc">+</span></span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">color =</span> <span class="st">&quot;____&quot;</span>, <span class="at">shape =</span> <span class="st">&quot;____&quot;</span>)   <span class="co"># same title in both places -&gt; merges into one legend</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(data, <span class="fu">aes</span>(<span class="at">x =</span> ____, <span class="at">y =</span> ____, <span class="at">color =</span> ___, <span class="at">shape =</span> ____)) <span class="sc">+</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">color =</span> <span class="st">&quot;____&quot;</span>, <span class="at">shape =</span> <span class="st">&quot;____&quot;</span>)   <span class="co"># same title in both places -&gt; merges into one legend</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 </div>
 <blockquote class="blockquote">
 <p><strong>Note:</strong> the title in <code>labs()</code> must be identical for <code>color</code> and <code>shape</code> (literally the same text string), or the two legends stay separate.</p>

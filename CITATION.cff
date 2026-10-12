@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use these materials in teaching, research, or derived work, please cite as below."
+title: "FA515: Pharmaceutical Physical Chemistry"
+abstract: "R and Quarto teaching materials that integrate data science into FA515: Pharmaceutical Physical Chemistry, a 5 ECTS bachelor course in pharmacy at the University of Southern Denmark. Students learn R through physical chemistry topics: an introduction to R, writing in Quarto, reaction kinetics and shelf-life estimation, vapour pressure and the Clausius-Clapeyron equation, and partial derivatives of multivariable functions."
+authors:
+  - family-names: "Jakobsen"
+    given-names: "Sebastian"
+    affiliation: "CPDSE, University of Southern Denmark"
+version: "2026.1"
+date-released: "2026-10-12"
+license: CC-BY-4.0
+url: "https://github.com/CPDSE-EDUX/SDU-BSc-FA515-Pharmaceutical-Physical-Chemistry"
+keywords:
+  - teaching
+  - pharmaceutical data science
+  - CPDSE
+  - physical chemistry
+  - R
+  - Quarto

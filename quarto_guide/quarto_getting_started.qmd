@@ -1,0 +1,318 @@
+---
+title: "Getting Started with Quarto"
+subtitle: "Combining text, code and output in one document"
+author: "Sebastian Jakobsen"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-overflow: wrap
+    embed-resources: true
+execute:
+  echo: true
+  warning: false
+  message: false
+---
+
+# Introduction {.unnumbered}
+
+Quarto lets you write text, R code and the results of that code in one document. When you **render** the document, Quarto runs your code from top to bottom and builds a finished report as HTML, PDF or Word. Your figures and numbers therefore always match your code, and anyone reading the report can see exactly how a result was produced.
+
+This guide covers:
+
+1.  Installing TinyTeX, so you can render to PDF
+2.  Creating and rendering a Quarto document in RStudio
+3.  The Visual and Source editors
+4.  Writing text and inserting code chunks
+5.  Markdown basics
+6.  The YAML header
+7.  Controlling which code and output is shown
+8.  Images and equations
+9.  Where to learn more
+
+> **Note:** This guide assumes you have R and RStudio installed. Recent versions of RStudio come with Quarto built in, so you do not need to install Quarto separately. If you are unsure, update RStudio to the newest version.
+
+------------------------------------------------------------------------
+
+# Install TinyTeX to render PDFs
+
+Rendering to HTML and Word works straight away. Rendering to **PDF** also requires LaTeX, a typesetting system that does the actual page layout. TinyTeX is a small LaTeX distribution made for exactly this purpose, and it is the one Quarto recommends. You only need to install it **once per computer**.
+
+## Install TinyTeX
+
+Open up RStudio and try running these two lines of code in the **Console** :
+
+```{r}
+#| eval: false
+install.packages("tinytex")
+tinytex::install_tinytex()
+```
+
+The first line installs the R package `tinytex`, and the second uses that package to download and install TinyTeX itself. This takes a few minutes. When it has finished, **close RStudio completely and open it again**, so RStudio can find the new installation.
+
+Alternatively, try running `quarto install tinytex` in the RStudio **Terminal** tab (right next to the **Console** tab), as it does the same thing. Use whatever method works for you.
+
+## Check that it works
+
+Run this in the Console:
+
+```{r}
+#| eval: false
+tinytex::is_tinytex()
+```
+
+If it returns `TRUE`, TinyTeX is installed. As a final test, create a new Quarto document (see @sec-create), change `format:` to `format: pdf` in the YAML header, and click **Render**.
+
+> **Note:** The first few times you render a PDF, TinyTeX may automatically download extra LaTeX packages it needs. Make sure you are connected to the internet.
+
+------------------------------------------------------------------------
+
+# Create and render a Quarto document {#sec-create}
+
+To create a Quarto document, follow these steps inside RStudio:
+
+1.  Go to **File \> New File \> Quarto Document...**
+2.  Give it a title, choose format (**HTML**, **PDF**, or **Word**) and click **Create**.
+3.  Save it (**Ctrl+S** / **Cmd+S**). Quarto files end in `.qmd`.
+4.  Click **Render** in the toolbar, or press **Ctrl+Shift+K** / **Cmd+Shift+K**.
+
+The rendered file (for example `report.html` or `report.pdf`) is saved in the same folder as your `.qmd` file. Ticking **Render on Save** next to the Render button re-renders the document every time you save.
+
+::: callout-important
+When you render, Quarto runs your document **from top to bottom in a fresh R session**. Anything you created by running code in the Console, or by clicking around in RStudio, does not exist during rendering. Every package you load, every data file you import and every object you use must be created by code inside the document itself, in the right order. File paths are read relative to the folder the `.qmd` file is saved in.
+:::
+
+------------------------------------------------------------------------
+
+# The Visual and Source editors
+
+At the top left of the editor you can switch between two ways of viewing the same file:
+
+-   **Visual** looks like a word processor. Headings look like headings, bold text looks bold, and a toolbar lets you format text and insert tables, images and equations. 
+-   **Source** shows the raw text with its Markdown syntax (for example `**bold**` instead of **bold**). This is what Quarto actually reads.
+
+You can switch back and forth at any time. It is good practice to get comfortable with the **Source** view, but use whatever approach works for you. 
+
+> **Note:** The first time you switch to Visual mode, RStudio may tidy up your Markdown (for example how lists are written or how lines are wrapped). This does not change what the rendered document looks like.
+
+
+------------------------------------------------------------------------
+
+# Text and code chunks
+
+A Quarto document is made of two things:
+
+-   **Text**, written in Markdown (see @sec-markdown)
+-   **Code chunks**, which contain R code that is run when you render
+
+A code chunk starts with ```` ```{r} ```` on its own line and ends with ```` ``` ````. Everything between those lines is R code, and everything outside them is text.
+
+## Insert and run a chunk
+
+Insert a new chunk with **Ctrl+Alt+I** / **Cmd+Option+I**. In Visual mode you can also use **Insert \> Code Chunk**.
+
+While writing, you can run code without rendering the whole document:
+
+| Action | Windows | Mac |
+|------------------------|------------------------|------------------------|
+| Run the current line | Ctrl+Enter | Cmd+Enter |
+| Run the whole chunk (or click the green ▶ arrow) | Ctrl+Shift+Enter | Cmd+Shift+Enter |
+| Run all chunks above this one | Click the grey ▼ arrow in the chunk | Same |
+
+The output appears directly below the chunk. To go back to writing text, move the cursor below the closing ```` ``` ```` and start typing.
+
+## An example
+
+Say we are following a drug that degrades in solution by first-order kinetics. The first chunk loads the packages we need, defines the starting concentration and rate constant, and calculates the concentration at a few time points. The first chunk in a document is a good place to load all your packages.
+
+```{r}
+#| echo: fenced
+library(tidyverse)
+
+C0_mM   <- 10     # mM - initial drug concentration
+k_per_h <- 0.10   # 1/h - first-order rate constant
+
+kinetics_data <- tibble(
+  time_h  = seq(0, 24, by = 4),
+  conc_mM = C0_mM * exp(-k_per_h * time_h)
+)
+
+kinetics_data
+```
+
+Writing the name of an object on its own line, like `kinetics_data` above, prints it. The table appears in the document directly below the code.
+
+The next chunk plots the same data. The plot also appears right below the code that made it.
+
+```{r}
+#| echo: fenced
+ggplot(kinetics_data, aes(x = time_h, y = conc_mM)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Time (h)", y = "Concentration (mM)") +
+  theme_minimal()
+```
+
+
+------------------------------------------------------------------------
+
+# Markdown basics {#sec-markdown}
+
+Markdown is a simple way to format text using ordinary characters. In Visual mode most of this is handled by the toolbar, but it is useful to recognise the syntax.
+
+| You write | You get |
+|------------------------------------|------------------------------------|
+| `*italic*` | *italic* |
+| `**bold**` | **bold** |
+| `# Heading 1` | A top-level heading |
+| `## Heading 2` | A subheading |
+| `- item` | A bullet point |
+| `1. item` | A numbered list |
+| `[Quarto](https://quarto.org)` | [Quarto](https://quarto.org) |
+| `` `code` `` | `code` |
+| `x^2^` | x^2^ |
+| `H~2~O` | H~2~O |
+
+Two rules catch most beginners:
+
+-   **Leave a blank line** between paragraphs, and before headings and lists. A single line break with no blank line is ignored, and the two lines are joined into one paragraph.
+-   **Put a space after `#`** in headings. `#Heading` is not a heading, `# Heading` is.
+
+------------------------------------------------------------------------
+
+# The YAML header
+
+The block between the two `---` lines at the very top of the document is the **YAML header**. It holds settings for the whole document, such as the title, author and output format.
+
+``` yaml
+---
+title: "Your Title"
+author: "Your Name"
+date: today
+lang: da
+format: pdf
+execute:
+  echo: true
+---
+```
+
+Some useful settings:
+
+| Setting | What it does |
+|------------------------------------|------------------------------------|
+| `title`, `author`, `date` | Shown at the top of the document. `date: today` inserts the render date |
+| `format` | Output format: `html`, `pdf` or `docx`.|
+| `lang: da` | Uses Danish labels, for example "Figur" instead of "Figure". Use `lang: en` to set the document language to English. |
+| `execute` | Default chunk options for the whole document. `echo: true` ensures that code chucks are shown along with the output |
+
+YAML is strict about its layout:
+
+-   Each setting is written as `key: value`, with a **space after the colon**.
+-   **Indentation matters** and shows what belongs to what (for instance `echo: true` belongs under `execute`. 
+
+------------------------------------------------------------------------
+
+# Controlling which code and output is shown {#sec-chunk-options}
+
+You rarely want every line of code in a finished report. **Chunk options** control what each chunk shows. They are written at the top of the chunk, on lines starting with `#|`:
+
+```{{r}}
+#| echo: false
+ggplot(kinetics_data, aes(x = time_h, y = conc_mM)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Time (h)", y = "Concentration (mM)") +
+  theme_minimal()
+```
+
+With `echo: false` the reader sees only the plot, not the code that made it:
+
+```{r}
+#| echo: false
+ggplot(kinetics_data, aes(x = time_h, y = conc_mM)) +
+  geom_point() +
+  geom_line() +
+  labs(x = "Time (h)", y = "Concentration (mM)") +
+  theme_minimal()
+```
+
+The most useful options:
+
+| Option | Runs the code? | Shows the code? | Shows the output? |
+|------------------|------------------|------------------|------------------|
+| `echo: true` | Yes | Yes | Yes |
+| `echo: false` | Yes | No | Yes |
+| `eval: false` | No | Yes | No |
+| `output: false` | Yes | Yes | No |
+| `include: false` | Yes | No | No |
+
+In addition, `warning: false` and `message: false` hide warnings and messages, for example the text printed when you load `tidyverse`. `include: false` is useful for a setup chunk that loads packages and data but should not appear in the report.
+
+To set an option for **every** chunk at once, put it under `execute:` in the YAML header. An option written in a single chunk overrides the document-wide setting.
+
+``` yaml
+execute:
+  echo: true
+  warning: false
+  message: false
+```
+
+> **Tip:** For HTML output, adding `code-fold: true` under `html:` in the YAML hides code behind a small "Code" button that the reader can click to expand.
+
+------------------------------------------------------------------------
+
+# Other useful features
+
+## Images
+
+Insert an image with this syntax, where the path is relative to the `.qmd` file:
+
+``` markdown
+![Caption text](image.png){width=60%}
+```
+
+The text in square brackets becomes the caption, and `{width=60%}` sets the size. In Visual mode you can use **Insert \> Figure / Image**, or simply paste or drag an image into the editor.
+
+To refer to a figure in the text, give it a label starting with `fig-` and use `@` to refer to it:
+
+``` markdown
+![Caption text](image.png){#fig-image}
+
+As shown in @fig-image...
+```
+
+Quarto numbers the figure and turns `@fig-image` into "Figure 1".
+
+## Equations
+
+Equations are written with LaTeX math syntax. Use single dollar signs for math inside a sentence, `$t_{½} = \frac{\ln(2)}{k}$` giving $t_{½} = \frac{\ln(2)}{k}$, and double dollar signs for an equation on its own line:
+
+``` markdown
+$$
+C(t) = C_0 \cdot e^{-k t}
+$$
+```
+
+which gives
+
+$$
+C(t) = C_0 \cdot e^{-k t}
+$$
+
+Some common building blocks: `x_i` for subscripts, `x^2` for superscripts, `\frac{a}{b}` for fractions, `\sqrt{x}` for square roots, and `\alpha`, `\beta`, `\mu` for Greek letters. To learn more about how to do various symbols search for **LaTeX equations** or **LaTeX math**. 
+
+------------------------------------------------------------------------
+
+# Where to learn more
+
+This guide only covers the basics. The official Quarto documentation is well written and has examples for nearly everything:
+
+-   [Get started with Quarto in RStudio](https://quarto.org/docs/get-started/hello/rstudio.html): a short hands-on tutorial
+-   [Markdown basics](https://quarto.org/docs/authoring/markdown-basics.html): all Markdown syntax, including tables and footnotes
+-   [The Visual editor](https://quarto.org/docs/visual-editor/): shortcuts and tips for Visual mode
+-   [Execution options](https://quarto.org/docs/computations/execution-options.html): all ways to control code and output
+-   [Figures](https://quarto.org/docs/authoring/figures.html) and [Cross-references](https://quarto.org/docs/authoring/cross-references.html): sizing, layout and referring to figures and tables
+-   [PDF basics](https://quarto.org/docs/output-formats/pdf-basics.html): options specific to PDF output
+-   [R for Data Science, chapter on Quarto](https://r4ds.hadley.nz/quarto.html): a friendly introduction in a broader R context

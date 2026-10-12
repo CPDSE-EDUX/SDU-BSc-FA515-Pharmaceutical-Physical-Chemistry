@@ -14,20 +14,13 @@ format:
 
 ## What this guide is for
 
-This guide shows how to go from measured vapour pressure vs. temperature
+This is an *R* guide that shows how to go from measured vapour pressure vs. temperature
 data to the thermodynamic quantities that describe a liquid's
-liquid-vapour equilibrium: the enthalpy and entropy of vaporisation
-($\Delta_{vap}H$, $\Delta_{vap}S$), and both the standard and normal boiling point. It
-works the same way whether your data is something you measured yourself
-at the bench and recorded in Excel, or a larger dataset you were given as
-a `.csv` file.
+liquid-vapour equilibrium using the Clausius–Clapeyron relation
 
 The overall approach - turn a non-linear physical relationship into
 something you can fit a straight line to, then read the physical
-quantities off the slope and intercept - is the same one used earlier in
-the course for temperature-dependent rate constants. Where a step is
-essentially identical to that earlier case, this guide says so rather
-than re-explaining it from scratch, so work through that material first
+quantities off the slope and intercept - is the same one used earlier for temperature-dependent reaction rate constants. Where a step is essentially identical to that earlier case, this guide says so rather than re-explaining it from scratch, so work through that material first
 if anything here feels unfamiliar.
 
 Some code below is complete; some has blanks marked `___` for you to
@@ -47,7 +40,7 @@ library(readxl)   # new here - reads Excel files, the same idea as read_csv()
 
 ### From your own measurements, recorded in Excel
 
-If you recorded your own readings by hand during a practical, they are
+If you recorded your own readings by hand during a lab exercise, they are
 probably sitting in an Excel file rather than a `.csv`. `readxl`'s
 `read_excel()` reads a `.xlsx` file straight into a tibble, the same way
 `read_csv()` reads a `.csv` - both hand you back a tidy data frame,
@@ -60,9 +53,8 @@ vapour_data <- read_excel("_______")   # fill in your file's path/name
 
 #### Structuring your spreadsheet so it imports cleanly
 
-`read_excel()` works best when the sheet underneath is already tidy - one
-variable per column, one measurement per row - rather than laid out the
-way you might present it in a report. A few habits make the difference:
+`read_excel()` works best when the sheet underneath is already tidy, meaning one
+variable per column, one measurement per row. A few habits make the difference:
 
 - Start the table in the top-left corner: the first header in cell `A1`,
   the data filling out from there. `read_excel()` begins reading at the
@@ -94,12 +86,7 @@ with no cleanup needed.
 
 ### From a larger provided csv dataset
 
-If instead you've been given a ready-made dataset as a `.csv` file  import it the way you already know:
-
-```{r}
-#| eval: false
-vapour_data <- read_csv("_______")   # fill in your file's path/name
-```
+If instead you've been given a ready-made dataset as a `.csv` file  import it the way you already know using `read_csv()`.
 
 The same tidy layout applies either way: whatever the file type, you
 want one row per measurement and one column per variable before moving
@@ -225,7 +212,7 @@ vapour_results
 Add one more entry to each of `liquid`, `slope`, `intercept` and `r2` per
 extra substance if you have more than two.
 
-::: {.callout-tip collapse="true"}
+::: {.callout-tip}
 ## A tidier alternative, for reference
 `group_by(liquid)` + `summarise()` fits one line per substance in a single
 step, so you don't write a separate `lm()` call for each. It fits the
@@ -253,7 +240,7 @@ substances without adding a line per substance by hand.
 
 ## Reporting the fitted line and R² on your figure
 
-A figure showing a fitted line is more useful with its equation and R² values reported somewhere - either directly on the plot, or written into the figure's caption. Which you use is mostly a matter of preference (and how many lines are on the same plot). For reporting directly on the plot, a guide can be found [here](https://cpdse-edux.github.io/R_documentation/topics/linear-regression.html). Alternatively, report the fitted line and R² in the figure caption rather than on the plot itself. The caption is just text, so record the slope, intercept and R² from the results data frame and add to your cpation (e.g. *"The fitted line for Liquid A is y = 1.23 - 4567x, R² = 0.987."*)
+A figure showing a fitted line is more useful with its equation and R² values reported somewhere - either directly on the plot, or written into the figure's caption. Which you use is mostly a matter of preference (and how many lines are on the same plot). For reporting directly on the plot, a guide can be found [here](https://cpdse-edux.github.io/R_documentation/topics/linear-regression.html). Alternatively, report the fitted line and R² in the figure caption rather than on the plot itself. Record the slope, intercept and R² from the results data frame and add to your caption (e.g. *"The fitted line for Liquid A is y = 1.23 - 4567x, R² = 0.987."*)
 
 ## From slope and intercept to $\Delta_{vap}H$ and $\Delta_{vap}S$
 
